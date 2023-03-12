@@ -15,6 +15,7 @@ class App extends Component {
 		error: null,
 		showLoader: false,
 		showModal: false,
+		showBtn: false,
 		modalImageURL: null,
 		showErrorMessage: false,
 	};
@@ -27,7 +28,6 @@ class App extends Component {
 		const nextPage = this.state.page;
 
 		if (prevSearchQuery !== nextSearchQuery || prevPage !== nextPage) {
-			// console.log('Name changed');
 			this.getImages(nextSearchQuery, this.state.page);
 		}
 	}
@@ -39,16 +39,22 @@ class App extends Component {
 				if (searchData.totalHits === 0) {
 					this.setState({ showErrorMessage: true });
 				}
-				searchData.hits.map(
-					({ id, webformatURL, largeImageURL, tags }) =>
-						this.setState(prevState => ({
-							// showErrorMessage: searchData.totalHits;
-							images: [
-								...prevState.images,
-								{ id, webformatURL, largeImageURL, tags },
-							],
-						}))
+				if (this.state.page < Math.ceil(searchData.totalHits) / 12) {
+					this.setState({ showBtn: true });
+				} else {
+					this.setState({ showBtn: false });
+				}
+				const mapped = searchData.hits.map(
+					({ id, webformatURL, largeImageURL, tags }) => ({
+						id,
+						webformatURL,
+						largeImageURL,
+						tags,
+					})
 				);
+				this.setState(prevState => ({
+					images: [...prevState.images, mapped].flat(),
+				}));
 			})
 			.catch(error => this.setState({ error }))
 			.finally(() => {
@@ -91,7 +97,8 @@ class App extends Component {
 	};
 
 	render() {
-		const { images, showModal, showLoader, showErrorMessage } = this.state;
+		const { images, showModal, showLoader, showErrorMessage, showBtn } =
+			this.state;
 
 		return (
 			<>
@@ -110,9 +117,7 @@ class App extends Component {
 
 				{showLoader && <Loader />}
 
-				{images.length > 0 && !showLoader && (
-					<Button loadMore={this.loadMore} />
-				)}
+				{showBtn && !showLoader && <Button loadMore={this.loadMore} />}
 
 				{showModal && (
 					<Modal
